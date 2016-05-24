@@ -1,0 +1,39 @@
+//
+   Created by asistent on 18.05.2016.
+
+
+doctype html
+html(lang="en")
+    head
+        meta(charset='utf8')
+        meta(http-equiv="X-UA-Compatible", content="IE=edge")
+        meta(name="viewport", content="width=device-width, initial-scale=1")
+        title User
+        link(rel="stylesheet", href="/bootstrap/dist/css/bootstrap.min.css")
+        link(rel="stylesheet", href="/bootstrap/dist/css/bootstrap-theme.min.css")
+        <!--[if lt IE 9]>
+        script(src="/html5shiv/dist/html5shiv.min.js")
+        script(src="/respond/dest/respond.min.js")
+        <![endif]-->
+        style.
+            .user {
+                margin: 10px;
+                padding: 10px;
+            }
+body
+    div.container
+        div.page-header
+            div.row
+                div.col-md-9
+                    h1 Привет <em> #{username} </em>
+                div.col-md-3
+                    span.user
+                        a.btn.btn-info(href="/") На главную
+                    span.user
+                        a.btn.btn-warning(href="/user/logout") Выход
+        div.content
+            p Тут будет вся информация о пользователе
+            p Для перехода к списку todo листа нажмите кнопку <b> На главную </b>
+            p Для выхода из приложения можно нажать кнопку <b>Выход</b>
+    script(src="/jquery/dist/jquery.min.js")
+    script(src="/bootstrap/dist/js/bootstrap.min.js")

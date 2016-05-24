@@ -1,0 +1,278 @@
+//-
+   Created by asistent on 10.05.2016.
+
+doctype html
+html(lang="en")
+    head
+        meta(charset='utf8')
+        meta(http-equiv="X-UA-Compatible", content="IE=edge")
+        meta(name="viewport", content="width=device-width, initial-scale=1")
+        title ToDo List
+        link(rel="stylesheet", href="/bootstrap/dist/css/bootstrap.min.css")
+        link(rel="stylesheet", href="/bootstrap/dist/css/bootstrap-theme.min.css")
+        link(rel="stylesheet", href="/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css")
+        <!--[if lt IE 9]>
+        script(src="/html5shiv/dist/html5shiv.min.js")
+        script(src="/respond/dest/respond.min.js")
+        <![endif]-->
+        style.
+            .complete {
+                text-decoration: line-through;
+            }
+
+            .user {
+                margin: 10px;
+                padding: 10px;
+            }
+
+body
+    div.container
+        div.page-header
+            div.row
+                div.col-md-9
+                    h1.
+                        Todo List
+                div.col-md-3
+                    span.user
+                        a.btn.btn-info(href="/user") Профиль
+                    span.user
+                        a.btn.btn-warning(href="/user/logout") Выход
+        div.todolist
+            table.table.table-hover
+                tr
+                    th Выполнено
+                    th Название
+                    th Описание
+                    th Дата создания
+                    th Кнопки
+                -
+                if data.status === 'success'
+                    -
+                    for item in data.todo
+                        -
+                            var id = 'data-id=' + item._id
+                        if item.completed === true
+                            -
+                                var classCompleted = 'complete'
+                        else
+                            -
+                                var classCompleted = ''
+                        tr
+                            td
+                                input(type="checkbox", data-id="#{item._id}", checked= item.completed)
+                            td
+                                span(data-id="#{item._id}", class= classCompleted)
+                                    = item.title
+                            td
+                                span(data-id="#{item._id}", class= classCompleted)
+                                    = item.description
+                            td
+                                span(data-id="#{item._id}", class= classCompleted)
+                                    = item.date
+                            td
+                                button.btn.btn-danger(type="button", name="dell", data-id="#{item._id}")
+                                    span.glyphicon.glyphicon-trash
+                                button.btn.btn-success(type="button", name="edit", data-id="#{item._id}")
+                                    span.glyphicon.glyphicon-pencil
+                tr.add
+                    td
+                    td
+                        input.form-control(type="text", placeholder="Название", name="title")
+                    td
+                        input.form-control(type="text", placeholder="Описание", name="description")
+                    td
+                        div.row
+                            div.col-sm-12
+                                input.form-control(type="text", id="datetimepicker", placeholder="Дата созздания", name="date")
+                    td
+                        button.btn.btn-primary(type="button", name="add")
+                            span.glyphicon.glyphicon-plus
+
+        if data.status === 'error'
+            span.error(data-msg="#{data.msg}")
+
+
+    script(src="/jquery/dist/jquery.min.js")
+    script(src="/bootstrap/dist/js/bootstrap.min.js")
+    script(src="/moment/min/moment.min.js")
+    script(src="/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js")
+    script.
+        // Функция для определения календаря
+        function datePicker() {
+            $('#datetimepicker').datetimepicker();
+        };
+
+        $(datePicker);
+
+        // Функция для отображения сообщений ошибки
+        function alertError(msg) {
+            $('div.todolist').after('<div class="alert alert-danger"><b>' + msg + '</div>');
+            setTimeout(function () {
+                $('div.alert').fadeOut('fast')
+            }, 3000);
+        };
+        // Загружаем задачи
+        $(document).ready(function () {
+            var span = $('div.container').find('span.error');
+            if (span.length > 0) {
+                var msg = span.data('msg');
+                $(span).replaceWith('<div class="alert alert-danger"><b>' + msg + '</div>');
+                setTimeout(function () {
+                    $('div.alert').fadeOut('fast')
+                }, 3000);
+            }
+
+            // Отметка задач об выполнении
+            $(document).on('change', 'input:checkbox', function () {
+                var id = $(this).data('id');
+
+                $.ajax({
+                    type: 'PATCH',
+                    url: '/todo/completed/' + id,
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.status === 'error') {
+                            return alertError('Сменить значение задачи не удалось' + data.msg);
+                        }
+                        if (data.todo.completed) {
+                            $('[data-id="' + id + '"]').addClass('complete');
+                        } else {
+                            $('[data-id="' + id + '"]').removeClass('complete');
+                        }
+                    },
+                    error: function () {
+                        return alertError('Ошибка подключения к базе данных');
+                    }
+                });
+            });
+
+            // Удаление задач
+            $(document).on('click', "button[name='dell']", function () {
+                var id = $(this).data('id');
+                $.ajax({
+                    type: 'DELETE',
+                    url: '/todo/dell/' + id,
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.status === 'error') {
+                            return alertError('Удалить не удалось' + data.msg);
+                        }
+                        if (data.status === 'success') {
+                            $('[data-id="' + id + '"]').parent('td').parent('tr').remove();
+                        }
+                    },
+                    error: function () {
+                        return alertError('Ошибка подключения к базе данных');
+                    }
+                });
+            });
+
+            // Редактирование задач
+            $(document).on('click', "button[name='edit']", function () {
+                var id = $(this).data('id');
+                var data = $('span[data-id="' + id + '"]');
+                var val0 = $(data[0]).text();
+                var val1 = $(data[1]).text();
+                var val2 = $(data[2]).text();
+
+                $(data[0]).replaceWith('<input type="text" class="form-control" ' +
+                        'placeholder="Название" name="title-edit" data-id="' + id + '" value="' + val0 + '">');
+                $(data[1]).replaceWith('<input type="text" class="form-control" ' +
+                        'placeholder="Описание" name="description-edit" data-id="' + id + '" ' +
+                        'value="' + val1 + '">');
+                $(data[2]).replaceWith('<div class="row"><div class="col-sm-12"><input type="text" ' +
+                        'class="form-control" placeholder="Дата создания" name="date-edit" ' +
+                        'data-id="' + id + '" value="' + val2 + '" id="datetimepicker"></div></div>');
+
+                $(datePicker);
+
+                var check = $('input[type="checkbox"][data-id="' + id + '"]');
+                $(check[0]).replaceWith('<input type="hidden" data-name="check" data-id="' + id + '">');
+
+                $('button[name="edit"][data-id="' + id + '"]').replaceWith('<button class="btn btn-primary" ' +
+                        'type="button" name="add-edit" data-id="' + id + '"><span class="glyphicon ' +
+                        'glyphicon-plus"></span></button>');
+
+                $(document).on('click', "button[name='add-edit'][data-id='" + id + "']", function () {
+                    var title = $('input[name="title-edit"][data-id="' + id + '"]');
+                    var description = $('input[name="description-edit"][data-id="' + id + '"]');
+                    var date = $('input[name="date-edit"][data-id="' + id + '"]');
+
+                    $.ajax({
+                        type: 'PUT',
+                        url: '/todo/edit/' + id,
+                        dataType: 'json',
+                        data: {
+                            'title': title.val(),
+                            'date': date.val(),
+                            'description': description.val()
+                        },
+                        success: function (data) {
+                            if (data.status === 'error') {
+                                return alertError(data.msg);
+                            }
+
+                            $(title).replaceWith('<span data-id="' + data.todo._id + '">' + data.todo.title +
+                                    '</span>');
+                            $(description).replaceWith('<span data-id="' + data.todo._id + '">' +
+                                    data.todo.description + '</span>');
+                            $(date).replaceWith('<span data-id="' + data.todo._id + '">' +
+                                    data.todo.date + '</span>');
+                            $('button[name="add-edit"][data-id="' + id + '"]').replaceWith('<button type="button" ' +
+                                    'class="btn btn-success" name="edit" data-id="' + data.todo._id + '">' +
+                                    '<span class="glyphicon glyphicon-pencil"></span></button>');
+                            $('input[data-name="check"][data-id="' + id + '"]')
+                                    .replaceWith('<input type="checkbox"' +
+                                            ' data-id="' + data.todo._id + '">');
+                        },
+                        error: function () {
+                            return alertError('Ошибка подключения к базе данных');
+                        }
+                    });
+                });
+            });
+
+            // Добавление новых задач
+            $("button[name='add']").on('click', function () {
+                var title = $("input[name='title']");
+                var description = $("input[name='description']");
+                var date = $("input[name='date']");
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/todo/add',
+                    dataType: 'json',
+                    data: {
+                        'title': title.val(),
+                        'description': description.val(),
+                        'date': date.val()
+                    },
+                    success: function (data) {
+                        if (data.status === 'error') {
+                            return alertError(data.msg);
+                        }
+                        $('tr.add')
+                                .before('<tr>' +
+                                        '<td><input type="checkbox" data-id="' + data.todo._id + '"></td>' +
+                                        '<td><span data-id="' + data.todo._id + '">' + data.todo.title +
+                                        '</span></td><td><span data-id="' + data.todo._id + '">' +
+                                        data.todo.description + '</span></td>' +
+                                        '<td><span data-id="' + data.todo._id + '">' + data.todo.date +
+                                        '</span></td><td><button type="button" class="btn btn-danger" ' +
+                                        'name="dell" data-id="' + data.todo._id + '">' +
+                                        '<span class="glyphicon glyphicon-trash"></span></button>' +
+                                        '<button type="button" class="btn btn-success" name="edit" data-id="' +
+                                        data.todo._id + '">' +
+                                        '<span class="glyphicon glyphicon-pencil"></span></button></td>' +
+                                        '</tr>');
+                    },
+                    error: function () {
+                        return alertError('Ошибка подключения к базе данных');
+                    }
+                });
+
+                title.val('');
+                description.val('');
+                date.val('');
+            });
+        });
