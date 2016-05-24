@@ -6,7 +6,8 @@ var UserModel = require('../models/user.js').UserModel,
     localStratagy = require('passport-local');
 
 var passport = function (passport) {
-    passport.use(new localStratagy(function (username, password, done) {
+    passport.use('/user/login', new localStratagy(
+        function (username, password, done) {
             UserModel.findOne({username: username}, function (err, user) {
                 if (err) {
                     return done(err);
@@ -20,6 +21,23 @@ var passport = function (passport) {
                     }
                     return done(null, user);
                 });
+            });
+        }
+    ));
+
+    passport.use('/user/register', new localStratagy(
+        function (username, password, done) {
+            var user = new UserModel({
+                username: username,
+                password: password
+            });
+
+            user.save(function (err) {
+                if (err) {
+                    return done(err);
+                } else {
+                    return done(null, user);
+                }
             });
         }
     ));
@@ -50,30 +68,12 @@ var logout = function (req, res) {
 };
 
 var errorLogin = function (req, res, next) {
+    console.log(req.url);
     if ((req.body.username === '') || (req.body.password === '')) {
-        return res.render('login', {status: 'error', msg: 'Заполните пожалуйста поля логин и пароль'});
+        return res.render('login', {status: 'error', url: req.url , msg: 'Заполните пожалуйста поля логин и пароль'});
     } else {
         return next();
     }
-};
-
-var register = function (req, res) {
-    if ((req.body.username === '') || (req.body.password === '')) {
-        return res.send({status: 'error', msg: 'Заполните пожалуйста поля логин и пароль'});
-    }
-
-    var user = new UserModel({
-        username: req.body.username,
-        password: req.body.password
-    });
-
-    user.save(function (err) {
-        if (err) {
-            return res.send({status: 'error', msg: 'Ошибка добавления пользователя в базу данных'});
-        } else {
-            return res.send({status: 'success', msg: 'Регистрация прошла удачно, войдите через форму входа'});
-        }
-    });
 };
 
 module.exports = {
@@ -81,6 +81,5 @@ module.exports = {
     errorLogin: errorLogin,
     login: login,
     user: user,
-    logout: logout,
-    register: register
+    logout: logout
 };

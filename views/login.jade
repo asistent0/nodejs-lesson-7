@@ -40,7 +40,7 @@ body
                         input.form-control(type="password", id="InputEmail1", name="password")
                     button.btn.btn-primary(type="submit") Отправить
                 -
-                if status === 'error'
+                if url === '/user/login'
                     span.error(data-msg="#{msg}")
             div.col-md-6.register
                 h2.register Регистрация нового пользователя
@@ -52,6 +52,9 @@ body
                         label(for="InputEmail2") Пароль
                         input.form-control(type="password", id="InputEmail2", name="password")
                     button.btn.btn-primary(type="submit") Отправить
+                -
+                if url === '/user/register'
+                    span.error(data-msg="#{msg}")
     script(src="/jquery/dist/jquery.min.js")
     script(src="/bootstrap/dist/js/bootstrap.min.js")
     script.
@@ -63,7 +66,7 @@ body
         };
 
         $(document).ready(function () {
-            var span = $('div.login').find('span.error');
+            var span = $('div.row').find('span.error');
             if (span.length > 0) {
                 var msg = span.data('msg');
                 $(span).replaceWith('<div class="alert alert-danger"><b>' + msg + '</div>');
@@ -71,24 +74,4 @@ body
                     $('div.alert').fadeOut('fast')
                 }, 3000);
             }
-
-
-
-            var form = $('form.register')
-            form.submit(function (e) {
-                e.preventDefault();
-                var username = form.find('input[name = "username"]').val();
-                var password = form.find('input[name = "password"]').val();
-                $.post('/user/register', {
-                    username: username,
-                    password: password
-                }, function (data) {
-                    if (data.status === 'error') {
-                        alertError(data.msg, 'danger');
-                    }
-                    if (data.status === 'success') {
-                        alertError(data.msg, 'success');
-                    }
-                })
-            })
         })
