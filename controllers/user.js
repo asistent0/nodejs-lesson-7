@@ -6,15 +6,22 @@ var UserModel = require('../models/user.js').UserModel,
     localStratagy = require('passport-local');
 
 var passport = function (passport) {
-    passport.use('/user/login', new localStratagy(
-        function (username, user, done) {
-            return done(null, user);
-        }
-    ));
-
-    passport.use('/user/register', new localStratagy(
-        function (user, done) {
-            return done(null, user);
+    passport.use(new localStratagy(
+        function (username, password, done) {
+            UserModel.findOne({username: username}, function (err, user) {
+                if (err) {
+                    return done(err);
+                }
+                if (!user) {
+                    return done(null, false, {msg: 'Invalid username'});
+                }
+                user.verifyPassword(password, function (err, valid) {
+                    if (!valid) {
+                        return done(null, false, {msg: 'Invalid Password'});
+                    }
+                    return done(null, user);
+                });
+            });
         }
     ));
 
@@ -64,30 +71,20 @@ var checkLogin = function (req, res, next) {
 };
 
 var checkRegister = function (req, res, next) {
-    var status = '';
-    var msg = '';
     if ((req.body.username === '') || (req.body.password === '')) {
-        status = 'error';
-        msg = 'Заполните пожалуйста поля логин и пароль';
-    } else {
-        var user = new UserModel({
-            username: req.body.username,
-            password: req.body.password
-        });
-
-        user.save(function (err) {
-            if (err) {
-                status = 'error';
-                msg = 'Ошибка подключения к базе данных';
-            }
-        });
+        return res.render('login', {status: 'error', url: req.url, msg: 'Заполните пожалуйста поля логин и пароль'});
     }
-
-    if (status === 'error') {
-        return res.render('login', {status: status, url: req.url, msg: msg});
-    } else {
+    var user = new UserModel({
+        username: req.body.username,
+        password: req.body.password
+    });
+    user.save(function (err) {
+        if (err) {
+            return res.render('login', {status: 'error', url: req.url, msg: 'Ошибка подключения к базе данных'});
+        }
         return next();
-    }
+    });
+
 };
 
 module.exports = {

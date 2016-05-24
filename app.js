@@ -31,12 +31,12 @@ app.use(passport.session());
 userController.passport(passport);
 
 app.get('/login', userController.getLogin);
-app.post('/user/login', userController.checkLogin, passport.authenticate('/user/login', {
+app.post('/user/login', userController.checkLogin, passport.authenticate('local', {
     successRedirect: '/user',
     failureRedirect: '/login'
 }));
 
-app.post('/user/register', userController.checkRegister, passport.authenticate('/user/register', {
+app.post('/user/register', userController.checkRegister, passport.authenticate('local', {
     successRedirect: '/user',
     failureRedirect: '/login'
 }));
