@@ -30,18 +30,19 @@ app.use(passport.session());
 
 userController.passport(passport);
 
-app.get('/login', userController.login);
-app.post('/user/login', userController.errorLogin, passport.authenticate('/user/login', {
+app.get('/login', userController.getLogin);
+app.post('/user/login', userController.checkLogin, passport.authenticate('/user/login', {
     successRedirect: '/user',
     failureRedirect: '/login'
 }));
+
+app.post('/user/register', userController.checkRegister, passport.authenticate('/user/register', {
+    successRedirect: '/user',
+    failureRedirect: '/login'
+}));
+
 app.get('/user', mustBeAuthenticated, userController.user);
 app.get('/user/logout', userController.logout);
-
-app.post('/user/register', userController.errorLogin, passport.authenticate('/user/register', {
-    successRedirect: '/user',
-    failureRedirect: '/login'
-}));
 
 app.get('/', mustBeAuthenticated, todoController.index);
 app.post('/todo/add', todoController.add);

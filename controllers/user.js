@@ -7,38 +7,14 @@ var UserModel = require('../models/user.js').UserModel,
 
 var passport = function (passport) {
     passport.use('/user/login', new localStratagy(
-        function (username, password, done) {
-            UserModel.findOne({username: username}, function (err, user) {
-                if (err) {
-                    return done(err);
-                }
-                if (!user) {
-                    return done(null, false, {msg: 'Invalid username'});
-                }
-                user.verifyPassword(password, function (err, valid) {
-                    if (!valid) {
-                        return done(null, false, {msg: 'Invalid Password'});
-                    }
-                    return done(null, user);
-                });
-            });
+        function (username, user, done) {
+            return done(null, user);
         }
     ));
 
     passport.use('/user/register', new localStratagy(
-        function (username, password, done) {
-            var user = new UserModel({
-                username: username,
-                password: password
-            });
-
-            user.save(function (err) {
-                if (err) {
-                    return done(err);
-                } else {
-                    return done(null, user);
-                }
-            });
+        function (user, done) {
+            return done(null, user);
         }
     ));
 
@@ -51,7 +27,7 @@ var passport = function (passport) {
     });
 };
 
-var login = function (req, res) {
+var getLogin = function (req, res) {
     if (req.isAuthenticated()) {
         return res.redirect('/');
     }
@@ -67,10 +43,48 @@ var logout = function (req, res) {
     res.redirect('/');
 };
 
-var errorLogin = function (req, res, next) {
-    console.log(req.url);
+var checkLogin = function (req, res, next) {
     if ((req.body.username === '') || (req.body.password === '')) {
-        return res.render('login', {status: 'error', url: req.url , msg: 'Заполните пожалуйста поля логин и пароль'});
+        return res.render('login', {status: 'error', url: req.url, msg: 'Заполните пожалуйста поля логин и пароль'});
+    }
+    UserModel.findOne({username: req.body.username}, function (err, user) {
+        if (err) {
+            return res.render('login', {status: 'error', url: req.url, msg: 'Ошибка подключения к базе данных'});
+        }
+        if (!user) {
+            return res.render('login', {status: 'error', url: req.url, msg: 'Нет такого пользователя в базе данных'});
+        }
+        user.verifyPassword(req.body.password, function (err, valid) {
+            if (!valid) {
+                return res.render('login', {status: 'error', url: req.url, msg: 'Введен неверный пароль'});
+            }
+            return next();
+        });
+    });
+};
+
+var checkRegister = function (req, res, next) {
+    var status = '';
+    var msg = '';
+    if ((req.body.username === '') || (req.body.password === '')) {
+        status = 'error';
+        msg = 'Заполните пожалуйста поля логин и пароль';
+    } else {
+        var user = new UserModel({
+            username: req.body.username,
+            password: req.body.password
+        });
+
+        user.save(function (err) {
+            if (err) {
+                status = 'error';
+                msg = 'Ошибка подключения к базе данных';
+            }
+        });
+    }
+
+    if (status === 'error') {
+        return res.render('login', {status: status, url: req.url, msg: msg});
     } else {
         return next();
     }
@@ -78,8 +92,9 @@ var errorLogin = function (req, res, next) {
 
 module.exports = {
     passport: passport,
-    errorLogin: errorLogin,
-    login: login,
+    checkLogin: checkLogin,
+    checkRegister: checkRegister,
+    getLogin: getLogin,
     user: user,
     logout: logout
 };
