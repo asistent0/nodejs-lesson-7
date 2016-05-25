@@ -78,13 +78,13 @@ var checkRegister = function (req, res, next) {
         username: req.body.username,
         password: req.body.password
     });
+
     user.save(function (err) {
         if (err) {
             return res.render('login', {status: 'error', url: req.url, msg: 'Ошибка подключения к базе данных'});
         }
         return next();
     });
-
 };
 
 module.exports = {
